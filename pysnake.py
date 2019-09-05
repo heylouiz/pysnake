@@ -26,14 +26,10 @@ DOWN = 3
 
 
 def random_pos(width=WINSIZE[0], height=WINSIZE[1]):
-    return (
-        random.randint(0, width/10)*10,
-        random.randint(0, height/10)*10
-    )
+    return (random.randint(0, width / 10) * 10, random.randint(0, height / 10) * 10)
 
 
 class Apple:
-
     def __init__(self, color=RED):
         self.x, self.y = random_pos()
         self.surface = pygame.Surface((PART_SIZE, PART_SIZE))
@@ -45,7 +41,6 @@ class Apple:
 
 
 class SnakeBodyPart:
-
     def __init__(self, x, y, color=WHITE):
         self.x = x
         self.y = y
@@ -57,7 +52,6 @@ class SnakeBodyPart:
 
 
 class Snake:
-
     def __init__(self, x, y, color=WHITE):
         self.color = color
         self.speed = INITIAL_SPEED
@@ -89,8 +83,8 @@ class Snake:
 
     def move(self):
         for i in range(len(self.body) - 1, 0, -1):
-            self.body[i].x = self.body[i-1].x
-            self.body[i].y = self.body[i-1].y
+            self.body[i].x = self.body[i - 1].x
+            self.body[i].y = self.body[i - 1].y
         if self.direction == LEFT:
             self.body[0].x -= self.speed
         elif self.direction == UP:
@@ -120,7 +114,7 @@ def main():
     clock = pygame.time.Clock()
     pygame.init()
     screen = pygame.display.set_mode(WINSIZE)
-    pygame.display.set_caption('PySnake')
+    pygame.display.set_caption("PySnake")
     screen.fill(BLACK)
 
     snake = Snake(WINCENTER[0], WINCENTER[1])
@@ -143,13 +137,13 @@ def main():
             if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
                 done = 1
                 break
-            if (e.type == KEYUP and
-                (e.key == K_LEFT or e.key == K_RIGHT or
-                 e.key == K_DOWN or e.key == K_UP)):
+            if e.type == KEYUP and (
+                e.key == K_LEFT or e.key == K_RIGHT or e.key == K_DOWN or e.key == K_UP
+            ):
                 snake.change_direction(e.key)
         pygame.display.update()
         screen.fill(BLACK)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
