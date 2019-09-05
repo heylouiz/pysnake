@@ -1,38 +1,17 @@
 #!/usr/bin/env python
-
-""" Simple 'snake' game implementation using pygame """
+""" Simple snake game implementation using pygame """
 
 import pygame
 import random
 from pygame.locals import K_LEFT, K_RIGHT, K_DOWN, K_UP, K_ESCAPE, KEYUP, QUIT
 
-# Constants
-WINSIZE = [640, 640]
-WINCENTER = [320, 320]
-INITIAL_SIZE = 3
-INITIAL_SPEED = 10
-PART_SIZE = 10
-
-# Colors
-WHITE = 255, 240, 200
-BLACK = 0, 0, 0
-RED = 255, 0, 0
-
-# Directions
-LEFT = 0
-UP = 1
-RIGHT = 2
-DOWN = 3
-
-
-def random_pos(width=WINSIZE[0], height=WINSIZE[1]):
-    return (random.randint(0, width / 10) * 10, random.randint(0, height / 10) * 10)
-
 
 class Apple:
-    def __init__(self, color=RED):
-        self.x, self.y = random_pos()
-        self.surface = pygame.Surface((PART_SIZE, PART_SIZE))
+    APPLE_SIZE = 10
+
+    def __init__(self, position, color):
+        self.x, self.y = position
+        self.surface = pygame.Surface((self.APPLE_SIZE, self.APPLE_SIZE))
         self.surface.fill(color)
         self.eaten = False
 
@@ -41,10 +20,9 @@ class Apple:
 
 
 class SnakeBodyPart:
-    def __init__(self, x, y, color=WHITE):
-        self.x = x
-        self.y = y
-        self.surface = pygame.Surface((PART_SIZE, PART_SIZE))
+    def __init__(self, position, color, size):
+        self.x, self.y = position
+        self.surface = pygame.Surface((size, size))
         self.surface.fill(color)
 
     def draw(self, screen):
@@ -52,15 +30,32 @@ class SnakeBodyPart:
 
 
 class Snake:
-    def __init__(self, x, y, color=WHITE):
+
+    SNAKE_SIZE = 3
+    SNAKE_SPEED = 10
+    SNAKE_PART_SIZE = 10
+    GROW_SPEED = 5
+
+    # Directions
+    LEFT, UP, RIGHT, DOWN = range(4)
+
+    def __init__(self, position, color):
         self.color = color
-        self.speed = INITIAL_SPEED
-        self.direction = LEFT
+        self.speed = self.SNAKE_SPEED
+        self.direction = self.LEFT
 
         self.body = list()
-        for i in range(INITIAL_SIZE):
-            self.body.append(SnakeBodyPart(x, y, color))
-            x += PART_SIZE
+        position = list(position)  # So we can increment X
+        for i in range(self.SNAKE_SIZE):
+            self.body.append(SnakeBodyPart(position, color, self.SNAKE_PART_SIZE))
+            position[
+                0
+            ] += (
+                self.SNAKE_PART_SIZE
+            )  # Increment X so the snake starts as a horizontal line
+
+    def head_position(self):
+        return (self.body[0].x, self.body[1].y)
 
     def draw(self, screen):
         for part in self.body:
@@ -68,7 +63,10 @@ class Snake:
 
     def grow(self):
         tail = self.body[-1]
-        self.body.append(SnakeBodyPart(tail.x, tail.y))
+        for _ in range(self.GROW_SPEED):
+            self.body.append(
+                SnakeBodyPart((tail.x, tail.y), self.color, self.SNAKE_PART_SIZE)
+            )
 
     def check_collision(self):
         for part in self.body[1:]:
@@ -76,73 +74,122 @@ class Snake:
                 return True
         return False
 
-    def eat(self, apple):
-        if self.body[0].x == apple.x and self.body[0].y == apple.y:
-            apple.eaten = True
-            self.grow()
-
     def move(self):
         for i in range(len(self.body) - 1, 0, -1):
             self.body[i].x = self.body[i - 1].x
             self.body[i].y = self.body[i - 1].y
-        if self.direction == LEFT:
+        if self.direction == self.LEFT:
             self.body[0].x -= self.speed
-        elif self.direction == UP:
+        elif self.direction == self.UP:
             self.body[0].y -= self.speed
-        elif self.direction == RIGHT:
+        elif self.direction == self.RIGHT:
             self.body[0].x += self.speed
-        elif self.direction == DOWN:
+        elif self.direction == self.DOWN:
             self.body[0].y += self.speed
 
     def change_direction(self, button):
         if button == K_LEFT:
-            if self.direction is not RIGHT:
-                self.direction = LEFT
+            if self.direction is not self.RIGHT:
+                self.direction = self.LEFT
         elif button == K_RIGHT:
-            if self.direction is not LEFT:
-                self.direction = RIGHT
+            if self.direction is not self.LEFT:
+                self.direction = self.RIGHT
         elif button == K_DOWN:
-            if self.direction is not UP:
-                self.direction = DOWN
+            if self.direction is not self.UP:
+                self.direction = self.DOWN
         elif button == K_UP:
-            if self.direction is not DOWN:
-                self.direction = UP
+            if self.direction is not self.DOWN:
+                self.direction = self.UP
+
+
+class Game:
+    # Game configurations
+    WINDOW_SIZE = [640, 640]
+    BACKGROUND_COLOR = 0, 0, 0  # Black
+    SNAKE_COLOR = 255, 255, 255  # White
+    APPLE_COLOR = 255, 0, 0  # Red
+
+    MOVEMENT_KEYS = [K_LEFT, K_RIGHT, K_DOWN, K_UP]
+
+    def __init__(self):
+        pygame.init()
+        pygame.display.set_caption("PySnake")
+        self.clock = pygame.time.Clock()
+        self.screen = pygame.display.set_mode(self.WINDOW_SIZE)
+        self.screen.fill(self.BACKGROUND_COLOR)
+
+        self.spawn_snake()
+        self.spawn_apple()
+
+    @property
+    def window_center(self):
+        return (self.WINDOW_SIZE[0] / 2, self.WINDOW_SIZE[1] / 2)
+
+    def random_window_coordinates(self):
+        return (
+            random.randint(0, self.WINDOW_SIZE[0] / 10) * 10,
+            random.randint(0, self.WINDOW_SIZE[1] / 10) * 10,
+        )
+
+    def spawn_apple(self):
+        self.apple = Apple(self.random_window_coordinates(), self.APPLE_COLOR)
+
+    def spawn_snake(self):
+        self.snake = Snake(self.window_center, self.SNAKE_COLOR)
+
+    def run(self):
+        done = False
+        while not done:
+            self.clock.tick(20)
+
+            self.check_if_apple_was_eaten()
+            if self.check_collision():
+                done = True
+                break
+
+            # Capture events and change positions
+            for e in pygame.event.get():
+                if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
+                    done = True
+                    break
+                if e.type == KEYUP and e.key in self.MOVEMENT_KEYS:
+                    self.snake.change_direction(e.key)
+            self.snake.move()
+
+            # Draw and update things on the screen
+            self.draw()
+            pygame.display.update()
+            self.screen.fill(self.BACKGROUND_COLOR)
+
+    def draw(self):
+        self.apple.draw(self.screen)
+        self.snake.draw(self.screen)
+
+    def is_position_out_of_screen(self, position):
+        x = position[0]
+        y = position[1]
+        return x < 0 or x > self.WINDOW_SIZE[0] or y < 0 or y > self.WINDOW_SIZE[1]
+
+    def check_collision(self):
+        collision = False
+        # Check if snake colide with itself
+        collision |= self.snake.check_collision()
+        # Check if snake colide with window borders
+        collision |= self.is_position_out_of_screen(self.snake.head_position())
+        return collision
+
+    def check_if_apple_was_eaten(self):
+        x, y = self.snake.head_position()
+        if x == self.apple.x and y == self.apple.y:
+            self.apple.eaten = True
+            self.snake.grow()
+            self.spawn_apple()
 
 
 def main():
-    # initialize and prepare screen
-    clock = pygame.time.Clock()
-    pygame.init()
-    screen = pygame.display.set_mode(WINSIZE)
-    pygame.display.set_caption("PySnake")
-    screen.fill(BLACK)
-
-    snake = Snake(WINCENTER[0], WINCENTER[1])
-    apple = Apple()
-
-    # Main game loop
-    done = 0
-    while not done:
-        clock.tick(20)
-        if apple.eaten:
-            apple = Apple()
-        apple.draw(screen)
-        snake.draw(screen)
-        snake.move()
-        snake.eat(apple)
-        if snake.check_collision():
-            done = 1
-            break
-        for e in pygame.event.get():
-            if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
-                done = 1
-                break
-            if e.type == KEYUP and (
-                e.key == K_LEFT or e.key == K_RIGHT or e.key == K_DOWN or e.key == K_UP
-            ):
-                snake.change_direction(e.key)
-        pygame.display.update()
-        screen.fill(BLACK)
+    game = Game()
+    game.run()
+    print("Game Over")
 
 
 if __name__ == "__main__":
