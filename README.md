@@ -1,5 +1,7 @@
 # PySnake
 
+![screenshot](screenshot.png?raw=true)
+
 Simple [Snake](https://en.wikipedia.org/wiki/Snake_(video_game_genre)) implementation in Python.
 
 I made this project while I was bored and to learn about [Pygame](https://www.pygame.org/).
